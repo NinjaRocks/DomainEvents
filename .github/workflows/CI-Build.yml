@@ -129,7 +129,7 @@ jobs:
       (needs.Build-Beta.result == 'success' || needs.Build-Release.result == 'success')
     runs-on: ubuntu-latest
     outputs:
-      semVersion: ${{ needs.run-build.outputs.semVersion }}
+      semVersion: ${{ needs.Build-Release.outputs.semVersion }}
     env:
       github-token: '${{ secrets.GH_Packages }}'
       working-directory: /home/runner/work/DomainEvents/DomainEvents
@@ -145,9 +145,10 @@ jobs:
 
       - name: Step-03 Publish to Github Packages
         run: find -name "*.nupkg" -print -exec gpr push -k ${{env.github-token}} {} \;
+
   Release:
-    if: startsWith(github.head_ref, 'release/')
     needs: [Package-Artifacts]
+    if:  startsWith(github.head_ref, 'release/')
     runs-on: ubuntu-latest
     env:
       nuget-token: '${{ secrets.NUGET_API_KEY }}'      
@@ -166,7 +167,7 @@ jobs:
             -H "Accept:application/vnd.github+json" \
             -H "Authorization:token ${{ secrets.GITHUB_TOKEN }}" \
             https://api.github.com/ninjarocks/DomainEvents/releases \
-            -d '{"tag_name":v${{ needs.Package.outputs.semVersion }},"target_commitish":"master","name":"DomainEvents","body":"Relese version ${{ needs.Package.outputs.semVersion }}","draft":false,"prerelease":false,"generate_release_notes":false}'
+            -d '{"tag_name":v${{ needs.Package-Artifacts.outputs.semVersion }},"target_commitish":"master","name":"DomainEvents","body":"Relese version ${{ needs.Package.outputs.semVersion }}","draft":false,"prerelease":false,"generate_release_notes":false}'
 
       - name: Step-03 Publish to Nuget Org
         run: dotnet nuget push ${{env.working-directory}}/src/DomainEvents/bin/Release/*.nupkg --skip-duplicate --api-key ${{ env.nuget-token }} --source https://api.nuget.org/v3/index.json
